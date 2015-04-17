@@ -1,0 +1,21 @@
+{
+  "name": "pub-resolve-opts",
+  "version": "0.5.0",
+  "description": "pub-config resolver for pub-generator and pub-server",
+  "main": "resolve-opts.js",
+  "dependencies": {
+    "logger-emitter": "*",
+    "pub-util": "*",
+    "resolve": "*",
+    "osenv": "*",
+    "debug": "*"
+  },
+  "devDependencies": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jldec/pub-resolve-opts.git"
+  },
+  "author": "jurgen leschner",
+  "license": "MIT"
+}
