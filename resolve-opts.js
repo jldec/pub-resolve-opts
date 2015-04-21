@@ -73,11 +73,13 @@ function resolveOpts(opts, builtins) {
     if (configFile = npmResolve(configPath, { extensions: ['.js', '.json'] } )) {
       var fileopts = require(configFile);
       if (fileopts['pub-pkg']) {
-        // don't open pub-pkg extensions directly
-        opts.log('ignoring pub extension ' + configFile);
+        // prevent pub-pkg folders from misbehaving when opened using pub
+        opts.log('ignoring pub-pkg config ' + configFile);
         fileopts = null;
       }
-      opts.log(configFile)
+      else {
+        opts.log(configFile);
+      }
     }
   }
 
@@ -97,11 +99,7 @@ function resolveOpts(opts, builtins) {
   if (!opts.sources.length) {
     var src = { path:opts.basedir, glob:'*.md', watch:true, writable:true };
     opts.sources.push(normalize(src));
-  }
-
-  // default theme
-  if (!fileopts && !opts.themes.length && opts.cli) {
-    opts.themes.push(normalize(opts['default-theme'] || 'pub-theme-gfm'));
+    opts.log('source %s/*.md', src.path);
   }
 
   // editor theme
@@ -113,21 +111,28 @@ function resolveOpts(opts, builtins) {
   builtins = typeof builtins === 'string' ?
     [ fspath.join(builtins + '/node_modules') ] : builtins;
 
-  // resolve themes
+  // resolve theme.dirs so that we can find pub-theme-?
+  u.each(opts.themes, resolveTheme);
+
+  // inject default theme
+  if (!fileopts && opts.cli &&
+      !u.find(opts.themes, function(theme) {
+        return /\/pub-theme/i.test(theme.dir);
+  })) {
+    opts.themes.push(resolveTheme(
+      normalize(opts['default-theme'] || 'pub-theme-gfm')));
+  }
+
+  // require themes
   u.each(opts.themes, function(theme) {
 
-    // always resolve themes relative to basedir allowing builtins
-    var themePath = npmResolve(theme.path,
-                    { basedir:opts.basedir, paths:builtins } );
+    opts.log(fspath.basename(theme.dir));
 
-    if (!themePath) throw new Error('cannot resolve theme ' + theme.path);
-
-    // require OPTSFILE even if package main is different
-    var themeDir  = fspath.dirname(themePath)
-    var themeOpts = require(fspath.join(themeDir, OPTSFILE));
+    // require OPTSFILE even if package.json main is different
+    var themeOpts = require(fspath.join(theme.dir, OPTSFILE));
 
     // resolve paths relative to theme directory not basedir
-    themeOpts = normalizeOpts(themeOpts, themeDir, theme.path);
+    themeOpts = normalizeOpts(themeOpts, theme.dir, theme.path);
 
     // only get OPTSKEYS (other theme opts are ignored)
     u.each(OPTSKEYS, function(key) {
@@ -180,10 +185,13 @@ function resolveOpts(opts, builtins) {
         fspath.join(opts.tmp || (osenv.home() + '/.tmp'), source.name);
     }
 
-    if (source.watch) { source.watch = watchOpts(source); }
-
     var pkg  = source.src || 'pub-src-fs';
     source.src = require(pkgPath(pkg))(source);
+
+    // watch all sources if opts.cli - TODO: review for perf
+    if (source.src.watchable && (opts.cli || source.watch)) {
+      source.watch = watchOpts(source);
+    }
 
     if (source.cache) {
 
@@ -205,7 +213,8 @@ function resolveOpts(opts, builtins) {
 
   // initialize staticPaths
   u.each(opts.staticPaths, function(sp) {
-    if (sp.watch) { sp.watch = watchOpts(sp); }
+    // always watch with cli, assume all staticPaths are watchable
+    if (opts.cli || sp.watch) { sp.watch = watchOpts(sp); }
   });
 
   opts._resolved = true;
@@ -307,6 +316,21 @@ function resolveOpts(opts, builtins) {
   function npmResolve() {
     try { return resolve.sync.apply(this, arguments); }
     catch (err) { return; }
+  }
+
+  function resolveTheme(theme) {
+    var dir = fspath.dirname(theme.path);
+    var base = fspath.basename(theme.path);
+    var resolveOpts = { basedir:opts.basedir, paths:builtins };
+
+    var themePath = npmResolve(theme.path, resolveOpts)
+                 || npmResolve(fspath.join(dir, 'pub-theme-' + base), resolveOpts)
+                 || npmResolve(fspath.join(dir, 'pub-pkg-' + base), resolveOpts);
+
+    if (!themePath) throw new Error('cannot resolve theme ' + theme.path);
+
+    theme.dir  = fspath.dirname(themePath);
+    return theme;
   }
 
 }
