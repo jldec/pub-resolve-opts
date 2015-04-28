@@ -95,11 +95,15 @@ function resolveOpts(opts, builtins) {
   if (fileopts) { mergeopts(opts, normalizeOpts(fileopts)); }
   if (defaults) { mergeopts(opts, normalizeOpts(defaults)); }
 
-  // default source (before applying themes) = *.md in basedir
+  // default source (before applying themes) = *.{md,hbs} in basedir
   if (!opts.sources.length) {
-    var src = { path:opts.basedir, glob:'*.md', watch:true, writable:true };
+    var src = { path:opts.basedir,
+                glob:'*.{md,hbs}',
+                watch:true,
+                writable:true,
+                fragmentDelim:opts.fragmentDelim };
     opts.sources.push(normalize(src));
-    opts.log('source %s/*.md', src.path);
+    opts.log('source %s/*.{md,hbs}', src.path);
   }
 
   // editor theme
