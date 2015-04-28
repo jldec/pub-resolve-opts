@@ -1,14 +1,14 @@
 # pub-resolve-opts
 
-pub-config resolver for pub-generator and pub-server
+config resolver for pub-generator and pub-server
 
-E.g.
+
 ```js
 resolvedOpts = require('pub-resolve-opts')('.', __dirname);
 ```
 
-- 1st parameter is a source directory (containing md files or pub-config.js) or input opts (e.g. from cli)
-- 2nd parameter is optional dir for builtins
+- param 1: directory (containing .md files or pub-config.js) or opts e.g. from cli
+- param 2: optional dir for builtins
 - return value: fully resolved opts, using themes and pub-config file
 
 ```javascript
@@ -21,9 +21,10 @@ var OPTSKEYS = [ 'sources',           // paths to source files
                  'themes' ];          // npm packages with more of the above
 ```
 
-# normalized form for OPTSKEY values
-- each OPTSKEY value from the input `pub-config` file or opts is normalized into an array of (zero or more) objects with `path:value`
+#### normalized form for OPTSKEY values
+- OPTSKEY values from the input `pub-config` file or opts are normalized
+- normalized = array of (zero or more) objects with a `path:value`
 - paths and module names are resolved relative to the config directory
-- OPTSKEY values from each theme's `pub-config` are merged into the top-level arrays
 - modules and dirs inside themes are resolved relative to theme directories
-- the function returns an object with one set of fully resolved `sources`, `staticPaths` etc.
+- OPTSKEY values from each theme are merged into top-level arrays
+- returns object with one set of fully resolved `sources`, `staticPaths` etc.

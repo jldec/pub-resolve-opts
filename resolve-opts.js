@@ -106,6 +106,11 @@ function resolveOpts(opts, builtins) {
     opts.log('source %s/*.{md,hbs}', src.path);
   }
 
+  // default staticPath = basedir
+  if (!opts.staticPaths.length) {
+    opts.staticPaths.push(normalize(opts.basedir));
+  }
+
   // editor theme
   if (opts.editor) {
     var editorTheme = opts['editor-theme'] || 'pub-pkg-editor';
