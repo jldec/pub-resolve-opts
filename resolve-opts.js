@@ -269,7 +269,7 @@ function resolveOpts(opts, builtins) {
         aval = [ aval ];
       }
 
-      obj[key] = u.map(aval, function(val) {
+      obj[key] = u.map(u.compact(aval), function(val) {
         return normalize(val, basedir, theme);
       });
 
