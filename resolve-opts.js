@@ -106,9 +106,9 @@ function resolveOpts(opts, builtins) {
     opts.log('source %s/*.{md,hbs}', src.path);
   }
 
-  // default outputs = basedir
+  // default output dir = './out'
   if (!opts.outputs.length) {
-    opts.outputs.push(normalize(opts.basedir));
+    opts.outputs.push(normalize(fspath.join(opts.basedir, 'out')));
   }
 
   // default staticPath = basedir
