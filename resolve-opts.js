@@ -106,6 +106,11 @@ function resolveOpts(opts, builtins) {
     opts.log('source %s/*.{md,hbs}', src.path);
   }
 
+  // default outputs = basedir
+  if (!opts.outputs.length) {
+    opts.outputs.push(normalize(opts.basedir));
+  }
+
   // default staticPath = basedir
   if (!opts.staticPaths.length) {
     opts.staticPaths.push(normalize(opts.basedir));
