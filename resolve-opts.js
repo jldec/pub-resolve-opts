@@ -72,9 +72,9 @@ function resolveOpts(opts, builtins) {
     // require(configFile) only if it can be resolved
     if (configFile = npmResolve(configPath, { extensions: ['.js', '.json'] } )) {
       var fileopts = require(configFile);
-      if (fileopts['pub-pkg']) {
+      if (opts.ignoreConfig || fileopts['pub-pkg']) {
         // prevent pub-pkg folders from misbehaving when opened using pub
-        opts.log('ignoring pub-pkg config ' + configFile);
+        opts.log('ignoring config ' + configFile);
         fileopts = null;
       }
       else {
