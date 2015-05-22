@@ -113,7 +113,10 @@ function resolveOpts(opts, builtins) {
 
   // default staticPath = basedir
   if (!opts.staticPaths.length) {
-    opts.staticPaths.push(normalize(opts.basedir));
+    opts.staticPaths.push(normalize( {
+      path:opts.basedir,
+      depth: (opts.staticOnly ? 5 : 2)
+    } ));
   }
 
   // editor theme
@@ -129,7 +132,7 @@ function resolveOpts(opts, builtins) {
   u.each(opts.themes, resolveTheme);
 
   // inject default theme
-  if (!fileopts && opts.cli &&
+  if (!fileopts && opts.cli && !opts.staticOnly &&
       !u.find(opts.themes, function(theme) {
         return /\/pub-theme/i.test(theme.dir);
   })) {
