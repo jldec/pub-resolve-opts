@@ -95,6 +95,17 @@ function resolveOpts(opts, builtins) {
   if (fileopts) { mergeopts(opts, normalizeOpts(fileopts)); }
   if (defaults) { mergeopts(opts, normalizeOpts(defaults)); }
 
+  // staticOnly ignore ALL sources, outputs and themes and return
+  if (opts.staticOnly) {
+    opts.log('static-only %s', u.csv(u.pluck(opts.staticOnly, 'path')));
+    opts.staticPaths = opts.staticOnly;
+    opts.sources = []; opts.source$ = {};
+    opts.outputs = []; opts.output$ = {};
+    opts.themes = [];
+    opts._resolved = true;
+    return opts;
+  }
+
   // default source (before applying themes) = *.{md,hbs} in basedir
   if (!opts.sources.length) {
     var src = { path:opts.basedir,
@@ -115,7 +126,7 @@ function resolveOpts(opts, builtins) {
   if (!opts.staticPaths.length) {
     opts.staticPaths.push(normalize( {
       path:opts.basedir,
-      depth: (opts.staticOnly ? 5 : 2)
+      depth: 2
     } ));
   }
 
