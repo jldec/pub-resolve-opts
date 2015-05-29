@@ -22,10 +22,12 @@ var OPTSFILE = 'pub-config';     // default filename for configs
 
 var OPTSKEYS = [ 'sources',           // paths to source files
                  'staticPaths',       // paths to static files
-                 'outputs',          // output destination(s)
+                 'outputs',           // output destination(s)
                  'browserScripts',    // for browserify
                  'generatorPlugins',  // e.g. to define handlebars helpers
                  'serverPlugins',     // e.g. to deploy server-side packages
+                 'injectCss',         // CSS paths to inject
+                 'injectJs',          // js paths to inject
                  'themes' ];          // npm packages with more of the above
 
 module.exports = resolveOpts;
@@ -52,6 +54,8 @@ function resolveOpts(opts, builtins) {
   var fspath = require('path');
   var osenv = require('osenv'); // https://github.com/isaacs/osenv
   var resolve = require('resolve');
+
+  builtins = (builtins && !u.isArray(builtins)) ? [builtins] : [];
 
   if (opts.cli) {
     // look for defaults in home directory
@@ -130,29 +134,46 @@ function resolveOpts(opts, builtins) {
     } ));
   }
 
+  // prepend pub-jquery or theme specified in opts.jquery
+  if (opts.jquery || !('jquery' in opts)) {
+    opts.themes.unshift(normalize(
+      ((typeof opts.jquery === 'string') && opts.jquery) || 'pub-jquery'));
+  }
+
   // editor theme
   if (opts.editor) {
     var editorTheme = opts['editor-theme'] || 'pub-pkg-editor';
     opts.themes.push(normalize(editorTheme));
+
+    // inject pub-ux.js and socket.io.js
+    // TODO - fix editor/production logic
+    if (!opts.production) {
+      if (!opts['no-sockets']) {
+        opts.injectJs.push(normalize('/socket.io/socket.io.js'));
+      }
+      opts.injectJs.push(normalize('/server/pub-ux.js'));
+    }
   }
 
-  builtins = typeof builtins === 'string' ?
-    [ fspath.join(builtins + '/node_modules') ] : builtins;
-
-  // resolve theme.dirs so that we can find pub-theme-?
-  u.each(opts.themes, resolveTheme);
-
-  // inject default theme
+  // inject default theme(s)
   if (!fileopts && opts.cli && !opts.staticOnly &&
       !u.find(opts.themes, function(theme) {
-        return /\/pub-theme/i.test(theme.dir);
+        return /pub-theme/i.test(theme.path);
   })) {
-    opts.themes.push(resolveTheme(
-      normalize(opts['default-theme'] || 'pub-theme-gfm')));
+    opts.themes = u.union(opts.themes, normalizeOptsKey(
+        opts['default-themes'] || ['pub-theme-gfm','pub-highlight']));
   }
+
+  // collect injected css and js from opts and save for later
+  injectPaths(opts.staticPaths);
+  injectPaths(opts.browserScripts);
+  var injectCssTmp = opts.injectCss; opts.injectCss = [];
+  var injectJsTmp = opts.injectJs; opts.injectJs = [];
 
   // require themes
   u.each(opts.themes, function(theme) {
+
+    resolveTheme(theme);
 
     opts.log(fspath.basename(theme.dir));
 
@@ -162,12 +183,33 @@ function resolveOpts(opts, builtins) {
     // resolve paths relative to theme directory not basedir
     themeOpts = normalizeOpts(themeOpts, theme.dir, theme.path);
 
-    // only get OPTSKEYS (other theme opts are ignored)
-    u.each(OPTSKEYS, function(key) {
+    // coalesce OPTSKEYS - other theme opts and nested themes are ignored
+    u.each(u.omit(OPTSKEYS, 'themes'), function(key) {
       opts[key] = u.union(opts[key], themeOpts[key]);
     });
 
+    // inject css and js
+    if (theme.inject || !('inject' in theme)) {
+      injectPaths(themeOpts.staticPaths);
+      injectPaths(themeOpts.browserScripts);
+    }
   });
+
+  // restore injected css and js from opts *after* themes
+  opts.injectCss = u.union(opts.injectCss, injectCssTmp);
+  opts.injectJs = u.union(opts.injectJs, injectJsTmp);
+
+  // add injectable staticPaths to opts.injectCss or opts.injectJs
+  function injectPaths(paths) {
+    u.each(paths, function(path) {
+      if (path.inject) {
+        // injected css and js sources are always rooted paths
+        var src = fspath.join(path.route || '/', fspath.basename(path.path));
+        if (/\.css$/i.test(src)) return opts.injectCss.push(normalize(src));
+        if (/\.js$/i.test(src)) return opts.injectJs.push(normalize(src));
+      }
+    });
+  }
 
   // resolve browserScripts which are npm modules
   u.each(opts.browserScripts, function(script) {
@@ -177,12 +219,8 @@ function resolveOpts(opts, builtins) {
 
     if (!path) throw new Error('cannot resolve browserScript ' + script.path);
 
-    // use route to serve script
-    // routes without extension treated like directory prefix for original path
-    var route = script.route || '/';
-    if (!fspath.extname(route)) {
-      route = fspath.join(route, fspath.basename(script.path));
-    }
+    // use route to serve script (TODO: revisit when we output BrowserScripts)
+    route = fspath.join(script.route || '/', fspath.basename(script.path));
 
     script.route = route;
     script.path = path;
@@ -275,28 +313,34 @@ function resolveOpts(opts, builtins) {
     return pkgPath;
   }
 
-  // mutate opts by normalizing themeKey value(s) into form [ { path:x },... ]
+  // mutate opts obj by normalizing Key values into form [ { path:x },... ]
   // qualify relative paths against basedir
   function normalizeOpts(obj, basedir, theme) {
     obj = obj || {};
 
     u.each(OPTSKEYS, function(key) {
-
-      var aval = obj[key] || [];
-
-      if (!u.isArray(aval)) {
-        aval = [ aval ];
-      }
-
-      obj[key] = u.map(u.compact(aval), function(val) {
-        return normalize(val, basedir, theme);
-      });
-
+      obj[key] = normalizeOptsKey(obj[key], basedir, theme);
     });
 
     return obj;
   }
 
+  // normalize a single opts key
+  function normalizeOptsKey(aval, basedir, theme) {
+
+    aval = aval || [];
+
+    if (!u.isArray(aval)) {
+      aval = [ aval ];
+    }
+
+    return u.map(u.compact(aval), function(val) {
+      return normalize(val, basedir, theme);
+    });
+
+  }
+
+  // normalize a single opts key value
   function normalize(val, basedir, theme) {
     basedir = basedir || opts.basedir;
 
@@ -306,14 +350,14 @@ function resolveOpts(opts, builtins) {
 
     var originalPath = val.path;
 
-    // relative directory paths always start with .
-    if (/^\./.test(val.path)) {
+    // relative directory paths always start with ./ or ../
+    if (/^\.\/|^\.\.\//.test(val.path)) {
       val.path = fspath.join(basedir, val.path);
     }
 
     // for brevity on console output
     val.inspect = function() {
-      return (val.route || originalPath) +
+      return (originalPath) +
              (theme ? ' in ' + theme : '') +
              (val.cache ?  ' (cached)' : '');
     };
@@ -329,8 +373,8 @@ function resolveOpts(opts, builtins) {
       if (u.contains(OPTSKEYS, key)) {
         opts[key] = u.union(opts[key], val);
       }
-      // assume only truthy values matter
-      else if (val && !opts[key]) {
+      // don't assume that only truthy values matter
+      else if (!(key in opts)) {
         opts[key] = val;
       }
     });
@@ -347,16 +391,9 @@ function resolveOpts(opts, builtins) {
   }
 
   function resolveTheme(theme) {
-    var dir = fspath.dirname(theme.path);
-    var base = fspath.basename(theme.path);
     var resolveOpts = { basedir:opts.basedir, paths:builtins };
-
-    var themePath = npmResolve(theme.path, resolveOpts)
-                 || npmResolve(fspath.join(dir, 'pub-theme-' + base), resolveOpts)
-                 || npmResolve(fspath.join(dir, 'pub-pkg-' + base), resolveOpts);
-
+    var themePath = npmResolve(theme.path, resolveOpts);
     if (!themePath) throw new Error('cannot resolve theme ' + theme.path);
-
     theme.dir  = fspath.dirname(themePath);
     return theme;
   }
