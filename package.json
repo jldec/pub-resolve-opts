@@ -1,6 +1,6 @@
 {
   "name": "pub-resolve-opts",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "pub-config resolver for pub-generator and pub-server",
   "main": "resolve-opts.js",
   "dependencies": {
