@@ -94,6 +94,13 @@ function resolveOpts(opts, builtins) {
       defaults && defaults.basedir ||
       process.cwd();
 
+  // try to read basedir/package.json
+  try {
+    var pkgfile = fspath.join(opts.basedir, 'package.json');
+    opts.pkgJson = JSON.parse(fs.readFileSync(pkgfile, 'utf8'));
+  }
+  catch(err) {}
+
   // normalize and merge opts, using basedir to resolve paths.
   opts = normalizeOpts(opts);
   if (fileopts) { mergeopts(opts, normalizeOpts(fileopts)); }
@@ -104,6 +111,7 @@ function resolveOpts(opts, builtins) {
     opts.log('static-only %s', u.csv(u.pluck(opts.staticOnly, 'path')));
     opts.staticPaths = opts.staticOnly;
     opts.sources = []; opts.source$ = {};
+    opts.outputOpts = opts.outputs[0]; // used by serveStatics
     opts.outputs = []; opts.output$ = {};
     opts.pkgs = [];
     opts._resolved = true;
@@ -115,8 +123,7 @@ function resolveOpts(opts, builtins) {
     var src = { path:opts.basedir,
                 glob:'*.{md,hbs}',
                 watch:true,
-                writable:true,
-                fragmentDelim:opts.fragmentDelim };
+                writable:true };
     opts.sources.push(normalize(src));
     opts.log('source %s/*.{md,hbs}', src.path);
   }
@@ -155,13 +162,19 @@ function resolveOpts(opts, builtins) {
     }
   }
 
+  // resolve pkgs to translate '..' refs into searchable paths
+  u.each(opts.pkgs, resolvePkg);
+
   // inject default theme/pkgs
   if (!fileopts && opts.cli && !opts.staticOnly &&
       !u.find(opts.pkgs, function(pkg) {
-        return /pub-theme/i.test(pkg.path);
+        return /pub-theme/i.test(pkg.dir);
   })) {
-    opts.pkgs = u.union(opts.pkgs, normalizeOptsKey(
-        opts['default-pkgs'] || ['pub-theme-gfm','pub-pkg-highlight']));
+    opts.pkgs = u.union(opts.pkgs,
+      u.map(
+        normalizeOptsKey(opts['default-pkgs'] ||
+          ['pub-theme-doc','pub-pkg-highlight','pub-pkg-font-awesome']),
+        resolvePkg));
   }
 
   // collect injected css and js from opts and save for later
@@ -172,8 +185,6 @@ function resolveOpts(opts, builtins) {
 
   // require pkgs
   u.each(opts.pkgs, function(pkg) {
-
-    resolvePkg(pkg);
 
     opts.log(fspath.basename(pkg.dir));
 
@@ -391,7 +402,12 @@ function resolveOpts(opts, builtins) {
   }
 
   function resolvePkg(pkg) {
-    var resolveOpts = { basedir:opts.basedir, paths:builtins };
+    var resolveOpts = { basedir:opts.basedir, paths:builtins,
+      // use packageFilter to capture parsed package.json
+      packageFilter:function(pkgJson, name) {
+        pkg.pkgJson = pkgJson;
+        return pkgJson;
+      } };
     var pkgPath = npmResolve(pkg.path, resolveOpts);
     if (!pkgPath) throw new Error('cannot resolve pkg ' + pkg.path);
     pkg.dir  = fspath.dirname(pkgPath);
