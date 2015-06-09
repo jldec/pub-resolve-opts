@@ -134,7 +134,7 @@ function resolveOpts(opts, builtins) {
   }
 
   // default staticPath = basedir
-  if (!opts.staticPaths.length) {
+  if (!opts.staticPaths.length && !opts.outputOnly) {
     opts.staticPaths.push(normalize( {
       path:opts.basedir,
       depth: 2
@@ -165,16 +165,18 @@ function resolveOpts(opts, builtins) {
   // resolve pkgs to translate '..' refs into searchable paths
   u.each(opts.pkgs, resolvePkg);
 
+  opts.theme = u.find(opts.pkgs, function(pkg) {
+    return /^pub-theme/i.test(pkg.pkgName);
+  });
+
   // inject default theme/pkgs
-  if (!fileopts && opts.cli && !opts.staticOnly &&
-      !u.find(opts.pkgs, function(pkg) {
-        return /pub-theme/i.test(pkg.dir);
-  })) {
+  if (!opts.theme && !fileopts && opts.cli && !opts.staticOnly) {
     opts.pkgs = u.union(opts.pkgs,
       u.map(
         normalizeOptsKey(opts['default-pkgs'] ||
           ['pub-theme-doc','pub-pkg-highlight','pub-pkg-font-awesome']),
         resolvePkg));
+    opts.theme = u.where(opts.pkgs, { pkgName:'pub-theme-doc' })[0];
   }
 
   // collect injected css and js from opts and save for later
@@ -406,6 +408,7 @@ function resolveOpts(opts, builtins) {
       // use packageFilter to capture parsed package.json
       packageFilter:function(pkgJson, name) {
         pkg.pkgJson = pkgJson;
+        pkg.pkgName = pkgJson.name;
         return pkgJson;
       } };
     var pkgPath = npmResolve(pkg.path, resolveOpts);
