@@ -98,6 +98,7 @@ function resolveOpts(opts, builtins) {
   try {
     var pkgfile = fspath.join(opts.basedir, 'package.json');
     opts.pkgJson = JSON.parse(fs.readFileSync(pkgfile, 'utf8'));
+    opts.pkgName = opts.pkgJson.name;
   }
   catch(err) {}
 
