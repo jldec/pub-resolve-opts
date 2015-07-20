@@ -135,7 +135,7 @@ function resolveOpts(opts, builtins) {
   }
 
   // default staticPath = basedir
-  if (!opts.staticPaths.length && !opts.outputOnly) {
+  if (!opts.staticPaths.length && !opts.outputOnly && !opts.htmlOnly) {
     opts.staticPaths.push(normalize( {
       path:opts.basedir,
       depth: 2
