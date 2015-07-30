@@ -378,6 +378,10 @@ function resolveOpts(opts, builtins) {
              (val.cache ?  ' (cached)' : '');
     };
 
+    if (pkg) {
+      val._pkg = pkg;
+    }
+
     return val;
   }
 
