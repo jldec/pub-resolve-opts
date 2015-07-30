@@ -132,6 +132,7 @@ function resolveOpts(opts, builtins) {
   // default output dir = './out'
   if (!opts.outputs.length) {
     opts.outputs.push(normalize(fspath.join(opts.basedir, 'out')));
+    if (opts.relPaths) { opts.outputs[0].relPaths = 1; }
   }
 
   // default staticPath = basedir
@@ -364,8 +365,9 @@ function resolveOpts(opts, builtins) {
 
     var originalPath = val.path;
 
-    // relative directory paths always start with ./ or ../
-    if (/^\.\/|^\.\.\//.test(val.path)) {
+    // don't join with basedir unless relative directory path
+    // TODO: make this smarter - only module names are not always relative
+    if (/^\.$|^\.\.$|^\.\/|^\.\.\//.test(val.path)) {
       val.path = fspath.join(basedir, val.path);
     }
 
