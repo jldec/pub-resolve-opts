@@ -1,11 +1,11 @@
 {
   "name": "pub-resolve-opts",
-  "version": "1.6.5",
+  "version": "1.6.6",
   "description": "pub-config resolver for pub-generator and pub-server",
   "main": "resolve-opts.js",
   "dependencies": {
     "logger-emitter": "^1.0.0",
-    "pub-util": "^1.4.0",
+    "pub-util": "^1.5.0",
     "resolve": "^1.1.6",
     "osenv": "^0.1.0",
     "debug": "^2.1.3"
