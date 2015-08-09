@@ -132,7 +132,6 @@ function resolveOpts(opts, builtins) {
   // default output dir = './out'
   if (!opts.outputs.length) {
     opts.outputs.push(normalize(fspath.join(opts.basedir, 'out')));
-    if (opts.relPaths) { opts.outputs[0].relPaths = 1; }
   }
 
   // default staticPath = basedir
