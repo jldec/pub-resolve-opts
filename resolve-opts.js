@@ -138,7 +138,7 @@ function resolveOpts(opts, builtins) {
   if (!opts.staticPaths.length && !opts.outputOnly && !opts.htmlOnly) {
     opts.staticPaths.push(normalize( {
       path:opts.basedir,
-      depth: 2
+      depth: 1
     } ));
   }
 
@@ -315,8 +315,11 @@ function resolveOpts(opts, builtins) {
     opt.name = name;
   }
 
-  function watchOpts(path) {
-    return (typeof path.watch === 'object') ? path.watch : {};
+  // don't watch inside packages unless opts.watchPkgs
+  // don't watch if src.watch = falsy
+  function watchOpts(src) {
+    if ((src._pkg && !opts.watchPkgs) || ('watch' in src && !src.watch)) return false;
+    return (typeof src.watch === 'object') ? src.watch : {};
   }
 
   // resolve package path given package name or {pkg:name}
