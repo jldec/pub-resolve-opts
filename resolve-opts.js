@@ -152,15 +152,6 @@ function resolveOpts(opts, builtins) {
   if (opts.editor) {
     var editorPkg = opts['editor-pkg'] || 'pub-pkg-editor';
     opts.pkgs.push(normalize(editorPkg));
-
-    // inject pub-ux.js and socket.io.js
-    // TODO - fix editor/production logic
-    if (!opts.production) {
-      if (!opts['no-sockets']) {
-        opts.injectJs.push(normalize('/socket.io/socket.io.js'));
-      }
-      opts.injectJs.push(normalize('/server/pub-ux.js'));
-    }
   }
 
   // resolve pkgs to translate '..' refs into searchable paths
@@ -225,6 +216,18 @@ function resolveOpts(opts, builtins) {
     });
   }
 
+  // inject sockets
+  // TODO: review for non-editor use cases
+  if (opts.editor && !opts['no-sockets']) {
+    opts.injectJs.push(normalize('/socket.io/socket.io.js'));
+  }
+
+  // inject pub-ux
+  // TODO: review for non-editor use cases
+  if (opts.editor) {
+    opts.injectJs.push(normalize('/server/pub-ux.js'));
+  }
+
   // resolve browserScripts which are npm modules
   u.each(opts.browserScripts, function(script) {
 
@@ -245,6 +248,7 @@ function resolveOpts(opts, builtins) {
     setOptName(output, 'output');
     output.output = true;
     output.writable = true;
+    normalizeFqImages(output);
   });
 
   // resolve and instantiate source packages and source caches
@@ -339,6 +343,8 @@ function resolveOpts(opts, builtins) {
       obj[key] = normalizeOptsKey(obj[key], basedir, pkg);
     });
 
+    normalizeFqImages(obj);
+
     return obj;
   }
 
@@ -424,6 +430,12 @@ function resolveOpts(opts, builtins) {
     if (!pkgPath) throw new Error('cannot resolve pkg ' + pkg.path);
     pkg.dir  = fspath.dirname(pkgPath);
     return pkg;
+  }
+
+  function normalizeFqImages(o) {
+    if (typeof o.fqImages === 'string') {
+      o.fqImages = { url:o.fqImages };
+    }
   }
 
 }
