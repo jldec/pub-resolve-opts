@@ -209,9 +209,10 @@ function resolveOpts(opts, builtins) {
     u.each(paths, function(path) {
       if (path.inject) {
         // injected css and js sources are always rooted paths
-        var src = fspath.join(path.route || '/', fspath.basename(path.path));
+        var src = mkSrc(path.route, path.path);
         if (/\.css$/i.test(src)) return opts.injectCss.push(normalize(src));
-        if (/\.js$/i.test(src)) return opts.injectJs.push(normalize(src));
+        if (/\.js$|\.es6$|\.jsx$/i.test(src)) return opts.injectJs.push(normalize(src));
+        return opts.log('Don\'t know how to inject', path.path);
       }
     });
   }
@@ -236,12 +237,21 @@ function resolveOpts(opts, builtins) {
 
     if (!path) throw new Error('cannot resolve browserScript ' + script.path);
 
-    // use route to serve script (TODO: revisit when we output BrowserScripts)
-    route = fspath.join(script.route || '/', fspath.basename(script.path));
+    if (/\.es6$|\.jsx$/i.test(path)) {
+      script.transform = [require(pkgPath('babelify'))];
+    }
 
-    script.route = route;
+    script.route = mkSrc(script.route, script.path);
     script.path = path;
   });
+
+  // compute route + path -- ignore path if route has an extension
+  // TODO - validate that server/serve-statics.js uses the same logic
+  function mkSrc(route, path) {
+    return fspath.extname(route) ?
+           route :
+           fspath.join(route || '/', fspath.basename(path));
+  }
 
   // pre-initialize outputs, then include with sources
   u.each(opts.outputs, function(output) {
