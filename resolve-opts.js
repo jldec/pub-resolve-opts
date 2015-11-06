@@ -209,9 +209,9 @@ function resolveOpts(opts, builtins) {
     u.each(paths, function(path) {
       if (path.inject) {
         // injected css and js sources are always rooted paths
-        var src = mkSrc(path.route, path.path);
-        if (/\.css$/i.test(src)) return opts.injectCss.push(normalize(src));
-        if (/\.js$|\.es6$|\.jsx$/i.test(src)) return opts.injectJs.push(normalize(src));
+        var src = mkSrc(path);
+        if (/\.css$/i.test(src.path)) return opts.injectCss.push(src);
+        if (/\.js$|\.es6$|\.jsx$/i.test(src.path)) return opts.injectJs.push(src);
         return opts.log('Don\'t know how to inject', path.path);
       }
     });
@@ -220,13 +220,13 @@ function resolveOpts(opts, builtins) {
   // inject sockets
   // TODO: review for non-editor use cases
   if (opts.editor && !opts['no-sockets']) {
-    opts.injectJs.push(normalize('/socket.io/socket.io.js'));
+    opts.injectJs.push({ path:'/socket.io/socket.io.js' });
   }
 
   // inject pub-ux
   // TODO: review for non-editor use cases
   if (opts.editor) {
-    opts.injectJs.push(normalize('/server/pub-ux.js'));
+    opts.injectJs.push({ path:'/server/pub-ux.js' });
   }
 
   // resolve browserScripts which are npm modules
@@ -241,16 +241,19 @@ function resolveOpts(opts, builtins) {
       script.transform = [require(pkgPath('babelify'))];
     }
 
-    script.route = mkSrc(script.route, script.path);
+    script.route = mkSrc(script).path;
     script.path = path;
   });
 
-  // compute route + path -- ignore path if route has an extension
-  // TODO - validate that server/serve-statics.js uses the same logic
-  function mkSrc(route, path) {
-    return fspath.extname(route) ?
-           route :
-           fspath.join(route || '/', fspath.basename(path));
+  // computes script src path from p.route + p.path
+  // returns object { path: async: }
+  function mkSrc(p) {
+    var src = {};
+    if (typeof p.inject === 'string') { src.async = p.inject; }
+    src.path = fspath.extname(p.route) ?
+               p.route :
+               fspath.join(p.route || '/', fspath.basename(p.path));
+    return src;
   }
 
   // pre-initialize outputs, then include with sources
@@ -292,10 +295,10 @@ function resolveOpts(opts, builtins) {
       // source.cache is either pkgname or {src:pkgname, writeThru:bool, ...}
       var cachePkg = source.cache.src || source.cache;
       var cacheOpts = source.cache.src ? source.cache : {};
-      u.extend(cacheOpts, u.pick(source, 'writable')); // inherit writability
+      u.assign(cacheOpts, u.pick(source, 'writable')); // inherit writability
 
       // set source.cache = cache instance with same sourceOpts, but writable
-      var cacheSourceOpts = u.extend(u.omit(source, 'src'),
+      var cacheSourceOpts = u.assign(u.omit(source, 'src'),
                             { writable:true, name:source.name+':cache' });
 
       source.cache = require(pkgPath(cachePkg))(cacheSourceOpts);
