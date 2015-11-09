@@ -155,7 +155,7 @@ function resolveOpts(opts, builtins) {
   }
 
   // resolve pkgs to translate '..' refs into searchable paths
-  u.each(opts.pkgs, resolvePkg);
+  u.each(opts.pkgs, function(pkg) { resolvePkg(pkg); });
 
   opts.theme = u.find(opts.pkgs, function(pkg) {
     return /^pub-theme/i.test(pkg.pkgName);
@@ -167,7 +167,7 @@ function resolveOpts(opts, builtins) {
       u.map(
         normalizeOptsKey(opts['default-pkgs'] ||
           ['pub-theme-doc','pub-pkg-highlight','pub-pkg-font-awesome']),
-        resolvePkg));
+        function(pkg) { return resolvePkg(pkg); }));
     opts.theme = u.where(opts.pkgs, { pkgName:'pub-theme-doc' })[0];
   }
 
@@ -378,7 +378,6 @@ function resolveOpts(opts, builtins) {
 
   // normalize a single opts key value
   function normalize(val, basedir, pkg) {
-    basedir = basedir || opts.basedir;
 
     if (typeof val === 'string') {
       val = { path: val };
@@ -386,10 +385,15 @@ function resolveOpts(opts, builtins) {
 
     var originalPath = val.path;
 
-    // don't join with basedir unless relative directory path
-    // TODO: make this smarter - only module names are not always relative
-    if (/^\.$|^\.\.$|^\.\/|^\.\.\//.test(val.path)) {
-      val.path = fspath.join(basedir, val.path);
+    // npm3 treatment of sub-package paths starting with ./node_modules/
+    var subPkgName = val.path.replace(/^\.\/node_modules\/([^\/]+).*/,'$1');
+    if (subPkgName != originalPath)  {
+      var subPkg = resolvePkg({ path:subPkgName }, basedir, true);
+      val.path = subPkg.dir + val.path.slice(15 + subPkgName.length);
+    }
+    // join with basedir if relative directory path
+    else if (/^\.$|^\.\.$|^\.\/|^\.\.\//.test(val.path)) {
+      val.path = fspath.join(basedir || opts.basedir, val.path);
     }
 
     // for brevity on console output
@@ -431,12 +435,16 @@ function resolveOpts(opts, builtins) {
     catch (err) { return; }
   }
 
-  function resolvePkg(pkg) {
-    var resolveOpts = { basedir:opts.basedir, paths:builtins,
-      // use packageFilter to capture parsed package.json
-      packageFilter:function(pkgJson, name) {
+  function resolvePkg(pkg, basedir, noPkgMain) {
+    var resolveOpts = {
+      basedir:       basedir || opts.basedir,
+      paths:         builtins,
+      packageFilter: function(pkgJson, name) {
+        // use packageFilter to capture parsed package.json
         pkg.pkgJson = pkgJson;
         pkg.pkgName = pkgJson.name;
+        // fake main for codeless packages without proper main or index.js
+        if (noPkgMain && !pkgJson.main) { pkgJson.main = 'package.json'; }
         return pkgJson;
       } };
     var pkgPath = npmResolve(pkg.path, resolveOpts);
