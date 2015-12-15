@@ -135,7 +135,7 @@ function resolveOpts(opts, builtins) {
   }
 
   // default staticPath = basedir
-  if (!opts.staticPaths.length && !opts.outputOnly && !opts.htmlOnly) {
+  if (!opts.staticPaths.length && !opts.outputOnly) {
     opts.staticPaths.push(normalize( {
       path:opts.basedir,
       depth: 1
@@ -148,14 +148,18 @@ function resolveOpts(opts, builtins) {
       ((typeof opts.jquery === 'string') && opts.jquery) || 'pub-pkg-jquery'));
   }
 
-  // editor pkg
-  if (opts.editor) {
-    var editorPkg = opts['editor-pkg'] || 'pub-pkg-editor';
-    opts.pkgs.push(normalize(editorPkg));
-  }
-
   // resolve pkgs to translate '..' refs into searchable paths
   u.each(opts.pkgs, function(pkg) { resolvePkg(pkg); });
+
+  opts.spa = u.find(opts.pkgs, function(pkg) {
+    return /^pub-pkg-spa/i.test(pkg.pkgName);
+  });
+
+  // legacy editor pkg
+  if (opts.editor && !opts.spa) {
+    var editorPkg = opts['editor-pkg'] || 'pub-pkg-editor';
+    opts.pkgs.push(resolvePkg(normalize(editorPkg)));
+  }
 
   opts.theme = u.find(opts.pkgs, function(pkg) {
     return /^pub-theme/i.test(pkg.pkgName);
@@ -218,14 +222,13 @@ function resolveOpts(opts, builtins) {
   }
 
   // inject sockets
-  // TODO: review for non-editor use cases
-  if (opts.editor && !opts['no-sockets']) {
+  if (!opts['no-sockets']) {
     opts.injectJs.push({ path:'/socket.io/socket.io.js' });
+    opts.injectJs.push({ path:'/server/pub-sockets.js' });
   }
 
-  // inject pub-ux
-  // TODO: review for non-editor use cases
-  if (opts.editor) {
+  // inject pub-ux for legacy editor
+  if (opts.editor && !opts.spa) {
     opts.injectJs.push({ path:'/server/pub-ux.js' });
   }
 
