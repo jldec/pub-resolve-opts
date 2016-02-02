@@ -229,7 +229,7 @@ function resolveOpts(opts, builtins) {
 
   // inject pub-ux for legacy editor
   if (opts.editor && !opts.spa) {
-    opts.injectJs.push({ path:'/server/pub-ux.js' });
+    opts.injectJs.push({ path:'/pub/pub-ux.js' });
   }
 
   // resolve browserScripts which are npm modules
