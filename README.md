@@ -1,4 +1,5 @@
 # pub-resolve-opts
+[![Build Status](https://api.travis-ci.org/jldec/pub-resolve-opts.svg?branch=master)](https://travis-ci.org/jldec/pub-resolve-opts)
 
 config resolver for pub-generator and pub-server
 

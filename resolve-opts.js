@@ -13,6 +13,9 @@
  * copyright 2015, Jurgen Leschner - github.com/jldec - MIT license
  */
 
+/*eslint no-unused-vars: ["error", { "varsIgnorePattern": "debug" }]*/
+/*eslint indent: ["off"]*/
+
 var debug = require('debug')('pub:resolve-opts');
 
 
@@ -71,10 +74,10 @@ function resolveOpts(opts, builtins) {
     var configPath = fspath.resolve(opts.dir);
 
     if (isDir(configPath)) {
-      configPath = fspath.join(configPath, OPTSFILE)
+      configPath = fspath.join(configPath, OPTSFILE);
     }
     // require(configFile) only if it can be resolved
-    if (configFile = npmResolve(configPath, { extensions: ['.js', '.json'] } )) {
+    if ((configFile = npmResolve(configPath, { extensions: ['.js', '.json'] } ))) {
       var fileopts = require(configFile);
       if (opts.ignoreConfig || fileopts['pub-pkg']) {
         // prevent pub-pkg folders from misbehaving when opened using pub
@@ -100,7 +103,7 @@ function resolveOpts(opts, builtins) {
     opts.pkgJson = JSON.parse(fs.readFileSync(pkgfile, 'utf8'));
     opts.pkgName = opts.pkgJson.name;
   }
-  catch(err) {}
+  catch(err) {/**/}
 
   // normalize and merge opts, using basedir to resolve paths.
   opts = normalizeOpts(opts);
@@ -235,13 +238,14 @@ function resolveOpts(opts, builtins) {
   // resolve browserScripts which are npm modules
   u.each(opts.browserScripts, function(script) {
 
-    var path = npmResolve(script.path,
-               { basedir:opts.basedir, paths:builtins } );
+    var path = npmResolve(script.path, { basedir:opts.basedir, paths:builtins } );
 
     if (!path) throw new Error('cannot resolve browserScript ' + script.path);
 
     if (/\.es6$|\.jsx$/i.test(path)) {
-      script.transform = [require(pkgPath('babelify'))];
+      script.transform = [
+        [ require(pkgPath('babelify')), { presets:['es2015', 'react'] } ]
+      ];
     }
 
     script.route = mkSrc(script).path;
@@ -325,7 +329,7 @@ function resolveOpts(opts, builtins) {
   // assign a unique name to opt by indexing opts.[optKey]$
   // NOTE: this may overwrite opt.name
   function setOptName(opt, optKey) {
-    var key$ = optKey + '$'
+    var key$ = optKey + '$';
     opts[key$] = opts[key$] || {};
     var name = opt.name || fspath.basename(opt.path);
     while (opts[key$][name]) {
@@ -389,7 +393,7 @@ function resolveOpts(opts, builtins) {
     var originalPath = val.path;
 
     // npm3 treatment of sub-package paths starting with ./node_modules/
-    var subPkgName = val.path.replace(/^\.\/node_modules\/([^\/]+).*/,'$1');
+    var subPkgName = val.path.replace(/^\.\/node_modules\/([^/]+).*/,'$1');
     if (subPkgName != originalPath)  {
       var subPkg = resolvePkg({ path:subPkgName }, basedir, true);
       val.path = subPkg.dir + val.path.slice(15 + subPkgName.length);
@@ -442,7 +446,7 @@ function resolveOpts(opts, builtins) {
     var resolveOpts = {
       basedir:       basedir || opts.basedir,
       paths:         builtins,
-      packageFilter: function(pkgJson, name) {
+      packageFilter: function(pkgJson) {
         // use packageFilter to capture parsed package.json
         pkg.pkgJson = pkgJson;
         pkg.pkgName = pkgJson.name;
