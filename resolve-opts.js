@@ -10,7 +10,7 @@
  * paths and module names are resolved relative to config directory or cwd
  * modules and dirs inside pkgs are resolved relative to pkg directories
  *
- * copyright 2015, Jurgen Leschner - github.com/jldec - MIT license
+ * copyright 2015-2019, Jurgen Leschner - github.com/jldec - MIT license
  */
 
 /*eslint no-unused-vars: ["error", { "varsIgnorePattern": "debug" }]*/
