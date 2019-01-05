@@ -244,7 +244,7 @@ function resolveOpts(opts, builtins) {
 
     if (/\.es6$|\.jsx$/i.test(path)) {
       script.transform = [
-        [ require(pkgPath('babelify')), { presets:['es2015', 'react'] } ]
+        [ require(pkgPath('babelify')), { presets:['@babel/preset-env', '@babel/preset-react'] } ]
       ];
     }
 
