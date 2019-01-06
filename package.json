@@ -1,6 +1,6 @@
 {
   "name": "pub-resolve-opts",
-  "version": "1.6.19",
+  "version": "1.6.20",
   "description": "pub-config resolver for pub-generator and pub-server",
   "main": "resolve-opts.js",
   "dependencies": {
@@ -15,7 +15,7 @@
     "babelify": "^10.0.0",
     "eslint": "^5.11.1",
     "pub-pkg-jquery": "^1.12.4",
-    "pub-src-fs": "^1.5.3",
+    "pub-src-fs": "^2.0.0",
     "tape": "^4.9.2",
     "tape-catch": "^1.0.6"
   },
