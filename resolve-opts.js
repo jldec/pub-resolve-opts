@@ -173,7 +173,7 @@ function resolveOpts(opts, builtins) {
     opts.pkgs = u.union(opts.pkgs,
       u.map(
         normalizeOptsKey(opts['default-pkgs'] ||
-          ['pub-theme-doc','pub-pkg-highlight','pub-pkg-font-awesome']),
+          ['pub-theme-doc','pub-pkg-prism','pub-pkg-font-awesome']),
         function(pkg) { return resolvePkg(pkg); }));
     opts.theme = u.where(opts.pkgs, { pkgName:'pub-theme-doc' })[0];
   }
@@ -237,17 +237,8 @@ function resolveOpts(opts, builtins) {
 
   // resolve browserScripts which are npm modules
   u.each(opts.browserScripts, function(script) {
-
     var path = npmResolve(script.path, { basedir:opts.basedir, paths:builtins } );
-
     if (!path) throw new Error('cannot resolve browserScript ' + script.path);
-
-    if (/\.es6$|\.jsx$/i.test(path)) {
-      script.transform = [
-        [ require(pkgPath('babelify')), { presets:['@babel/preset-env', '@babel/preset-react'] } ]
-      ];
-    }
-
     script.route = mkSrc(script).path;
     script.path = path;
   });
