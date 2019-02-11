@@ -154,12 +154,10 @@ function resolveOpts(opts, builtins) {
   // resolve pkgs to translate '..' refs into searchable paths
   u.each(opts.pkgs, function(pkg) { resolvePkg(pkg); });
 
-  opts.spa = u.find(opts.pkgs, function(pkg) {
-    return /^pub-pkg-spa/i.test(pkg.pkgName);
-  });
+  // allow opts.noEditor or opts['no-editor] to override opts.editor
+  opts.editor = opts.editor && !opts.noEditor && !opts['no-editor'];
 
-  // legacy editor pkg
-  if (opts.editor && !opts.spa) {
+  if (opts.editor) {
     var editorPkg = opts['editor-pkg'] || 'pub-pkg-editor';
     opts.pkgs.push(resolvePkg(normalize(editorPkg)));
   }
@@ -230,8 +228,8 @@ function resolveOpts(opts, builtins) {
     opts.injectJs.push({ path:'/server/pub-sockets.js' });
   }
 
-  // inject pub-ux for legacy editor
-  if (opts.editor && !opts.spa) {
+  // inject pub-ux for editor
+  if (opts.editor) {
     opts.injectJs.push({ path:'/pub/pub-ux.js' });
   }
 
