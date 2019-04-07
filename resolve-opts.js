@@ -54,7 +54,7 @@ function resolveOpts(opts, builtins) {
   //        below this should not be run on client        //
 
   var fs = require('fs');
-  var fspath = require('path');
+  var fspath = require('path'); // behaves differently under windows
   var osenv = require('osenv'); // https://github.com/isaacs/osenv
   var resolve = require('resolve');
 
@@ -248,7 +248,7 @@ function resolveOpts(opts, builtins) {
     if (typeof p.inject === 'string') { src.async = p.inject; }
     src.path = fspath.extname(p.route) ?
                p.route :
-               fspath.join(p.route || '/', fspath.basename(p.path));
+               fspath.posix.join(p.route || '/', fspath.basename(p.path));
     return src;
   }
 
