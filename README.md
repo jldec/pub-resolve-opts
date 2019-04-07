@@ -1,4 +1,5 @@
 # pub-resolve-opts
+[![Azure Build Status](https://dev.azure.com/jldec/pub-resolve-opts/_apis/build/status/jldec.pub-resolve-opts?branchName=master)](https://dev.azure.com/jldec/pub-resolve-opts/_build/latest?definitionId=1&branchName=master)
 [![Build Status](https://api.travis-ci.org/jldec/pub-resolve-opts.svg?branch=master)](https://travis-ci.org/jldec/pub-resolve-opts)
 
 config resolver for pub-generator and pub-server
