@@ -249,7 +249,7 @@ function resolveOpts(opts, builtins) {
     if (typeof p.inject === 'string') { src.async = p.inject; }
     src.path = fspath.extname(p.route) ?
                p.route :
-               ppath.join(p.route || '/', ppath.basename(p.path));
+               ppath.join(p.route || '/', fspath.basename(p.path));
     return src;
   }
 
