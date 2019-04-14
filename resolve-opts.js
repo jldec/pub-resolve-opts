@@ -55,10 +55,11 @@ function resolveOpts(opts, builtins) {
 
   var fs = require('fs');
   var fspath = require('path'); // behaves differently under windows
+  var ppath = fspath.posix || fspath; // in browser path is posix
   var osenv = require('osenv'); // https://github.com/isaacs/osenv
   var resolve = require('resolve');
 
-  builtins = (builtins && !u.isArray(builtins)) ? [builtins] : [];
+  builtins = builtins ? (u.isArray(builtins) ? builtins : [builtins]) : [];
 
   if (opts.cli) {
     // look for defaults in home directory
@@ -248,7 +249,7 @@ function resolveOpts(opts, builtins) {
     if (typeof p.inject === 'string') { src.async = p.inject; }
     src.path = fspath.extname(p.route) ?
                p.route :
-               fspath.posix.join(p.route || '/', fspath.basename(p.path));
+               ppath.join(p.route || '/', ppath.basename(p.path));
     return src;
   }
 
