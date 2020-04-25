@@ -383,7 +383,11 @@ function resolveOpts(opts, builtins) {
     var originalPath = val.path;
 
     // npm3 treatment of sub-package paths starting with ./node_modules/
-    var subPkgName = val.path.replace(/^\.\/node_modules\/([^/]+).*/,'$1');
+    // handle scoped @user/modules e.g. for @shower/ribbon in pub-theme-shower-ribbon
+    var subPkgName = val.path.match(/^\.\/node_modules\/@/) ?
+      val.path.replace(/^\.\/node_modules\/(@[^/]+\/[^/]+).*/,'$1') :
+      val.path.replace(/^\.\/node_modules\/([^/]+).*/,'$1');
+
     if (subPkgName != originalPath)  {
       var subPkg = resolvePkg({ path:subPkgName }, basedir, true);
       val.path = subPkg.dir + val.path.slice(15 + subPkgName.length);
