@@ -287,21 +287,29 @@ function resolveOpts(opts, builtins) {
       source.watch = watchOpts(source);
     }
 
-    if (source.cache) {
+    // cache2 only makes sense if cache
+    if (checkCache('cache')) {
+      checkCache('cache2');
+    }
 
-      // source.cache is either pkgname or {src:pkgname, writeThru:bool, ...}
-      var cachePkg = source.cache.src || source.cache;
-      var cacheOpts = source.cache.src ? source.cache : {};
-      u.assign(cacheOpts, u.pick(source, 'writable')); // inherit writability
+    function checkCache(nme) {
+      var cache = source[nme];
+      if (!cache) return false;
 
-      // set source.cache = cache instance with same sourceOpts, but writable
+      // cache config is either truthy or { writeThru:bool, ... }
+      // inherit writability at cache api, cacheSource must be writable
+      var cacheOpts = (typeof cache === 'object') ? cache : {};
+      u.assign(cacheOpts, u.pick(source, 'writable'));
+
+      // same as source opts, but writable
       var cacheSourceOpts = u.assign(u.omit(source, 'src'),
-                            { writable:true, name:source.name+':cache' });
-
-      source.cache = require(pkgPath(cachePkg))(cacheSourceOpts);
+                            { writable:true, name:source.name + ':' + nme });
+      var cacheSource = require(pkgPath('pub-src-redis'))(cacheSourceOpts);
 
       // interpose cache onto source (replaces source.get and source.put)
-      source.cache.cache(source.src, cacheOpts);
+      cacheSource.cache(source.src, cacheOpts);
+      source[nme] = cacheSource;
+      return true;
     }
   });
 
