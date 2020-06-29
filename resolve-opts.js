@@ -161,6 +161,8 @@ function resolveOpts(opts, builtins) {
   if (opts.editor) {
     var editorPkg = opts['editor-pkg'] || 'pub-pkg-editor';
     opts.pkgs.push(resolvePkg(normalize(editorPkg)));
+    // editorPrefix must not have trailing /, will redirect to path with trailing /
+    opts.editorPrefix = opts.editorPrefix || '/pub';
   }
 
   opts.theme = u.find(opts.pkgs, function(pkg) {
