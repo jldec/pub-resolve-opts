@@ -1,5 +1,5 @@
 # pub-resolve-opts
-![CI](https://github.com/jldec/pub-resolve-opts/workflows/CI/badge.svg)
+[![CI](https://github.com/jldec/pub-resolve-opts/workflows/CI/badge.svg)](https://github.com/jldec/pub-resolve-opts/actions)
 
 config resolver for pub-generator and pub-server
 
