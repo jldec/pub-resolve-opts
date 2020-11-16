@@ -398,11 +398,13 @@ function resolveOpts(opts, builtins) {
       val.path.replace(/^\.\/node_modules\/(@[^/]+\/[^/]+).*/,'$1') :
       val.path.replace(/^\.\/node_modules\/([^/]+).*/,'$1');
 
+    // replace val.path with resolved path of sub-package + val.path
     if (subPkgName != originalPath)  {
       var subPkg = resolvePkg({ path:subPkgName }, basedir, true);
-      val.path = subPkg.dir + val.path.slice(15 + subPkgName.length);
+      var resolvedDir = subPkg.dir.slice(0, subPkg.dir.indexOf('node_modules/' + subPkgName));
+      val.path = resolvedDir + val.path.slice(2);
     }
-    // join with basedir if relative directory path
+    // else join with basedir if relative directory path
     else if (/^\.$|^\.\.$|^\.\/|^\.\.\//.test(val.path)) {
       val.path = fspath.join(basedir || opts.basedir, val.path);
     }
