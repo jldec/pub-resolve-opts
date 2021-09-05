@@ -1,20 +1,20 @@
 {
   "name": "pub-resolve-opts",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "pub-config resolver for pub-generator and pub-server",
   "main": "resolve-opts.js",
   "dependencies": {
-    "debug": "^4.2.0",
+    "debug": "^4.3.2",
     "logger-emitter": "^1.0.9",
     "osenv": "^0.1.5",
     "pub-util": "^3.2.0",
-    "resolve": "^1.18.1"
+    "resolve": "^1.20.0"
   },
   "devDependencies": {
-    "eslint": "^7.13.0",
+    "eslint": "^7.32.0",
     "pub-pkg-jquery": "^1.12.4",
     "pub-src-fs": "^2.1.2",
-    "tape": "^5.0.1",
+    "tape": "^5.3.1",
     "tape-catch": "^1.0.6"
   },
   "files": [
